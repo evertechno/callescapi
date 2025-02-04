@@ -7,7 +7,7 @@ API_URL = "https://escalaticsapi.onrender.com/analyze-email"
 
 # Streamlit UI setup
 st.title("Email Content Analyzer")
-st.write("Enter the text of an email to get its sentiment analysis, summary, and word cloud data.")
+st.write("Enter the text of an email to get its sentiment analysis, summary, word cloud data, and more.")
 
 # User input
 email_text = st.text_area("Enter Email Text", height=200)
@@ -33,8 +33,9 @@ if st.button("Analyze Email"):
                 st.write(data.get("summary", "No summary available"))
                 
                 # Display sentiment analysis
-                sentiment_label = data.get("sentiment", {}).get("label", "Unknown")
-                sentiment_score = data.get("sentiment", {}).get("score", 0)
+                sentiment = data.get("sentiment", {})
+                sentiment_label = sentiment.get("label", "Unknown")
+                sentiment_score = sentiment.get("score", 0)
                 st.subheader("Sentiment Analysis")
                 st.write(f"Sentiment: {sentiment_label}")
                 st.write(f"Sentiment Score: {sentiment_score}")
@@ -42,7 +43,31 @@ if st.button("Analyze Email"):
                 # Display word cloud data (in this case, it's just word frequency counts)
                 wordcloud_data = data.get("wordcloud", {})
                 st.subheader("Word Cloud Data")
-                st.write(wordcloud_data)
+                if wordcloud_data:
+                    st.write(wordcloud_data)
+                else:
+                    st.write("No word cloud data available.")
+                
+                # Display additional features if available (e.g., topics, entities, etc.)
+                if "topics" in data:
+                    st.subheader("Detected Topics")
+                    st.write(data["topics"])
+                
+                if "entities" in data:
+                    st.subheader("Named Entities")
+                    st.write(data["entities"])
+                
+                if "keywords" in data:
+                    st.subheader("Keywords")
+                    st.write(data["keywords"])
+                
+                if "readability" in data:
+                    st.subheader("Readability Analysis")
+                    st.write(data["readability"])
+
+                if "language" in data:
+                    st.subheader("Detected Language")
+                    st.write(data["language"])
                 
             else:
                 st.error(f"Failed to analyze email. Status code: {response.status_code}")
