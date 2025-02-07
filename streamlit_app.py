@@ -27,70 +27,100 @@ if st.button("Analyze Email"):
             # 1. Sentiment Analysis
             sentiment_response = requests.post(f"{API_URL}/api/sentiment", json=email_data)
             if sentiment_response.status_code == 200:
-                analysis_results["sentiment"] = sentiment_response.json()
+                if sentiment_response.text.strip():  # Check if response is not empty
+                    analysis_results["sentiment"] = sentiment_response.json()
+                else:
+                    st.error("Sentiment analysis returned an empty response.")
             else:
                 st.error(f"Sentiment analysis failed. Status code: {sentiment_response.status_code}")
 
             # 2. Summary
             summary_response = requests.post(f"{API_URL}/api/summary", json=email_data)
             if summary_response.status_code == 200:
-                analysis_results["summary"] = summary_response.json()
+                if summary_response.text.strip():  # Check if response is not empty
+                    analysis_results["summary"] = summary_response.json()
+                else:
+                    st.error("Summary generation returned an empty response.")
             else:
                 st.error(f"Summary generation failed. Status code: {summary_response.status_code}")
 
             # 3. Key Phrases
             key_phrases_response = requests.post(f"{API_URL}/api/key_phrases", json=email_data)
             if key_phrases_response.status_code == 200:
-                analysis_results["key_phrases"] = key_phrases_response.json()
+                if key_phrases_response.text.strip():  # Check if response is not empty
+                    analysis_results["key_phrases"] = key_phrases_response.json()
+                else:
+                    st.error("Key phrases extraction returned an empty response.")
             else:
                 st.error(f"Key phrases extraction failed. Status code: {key_phrases_response.status_code}")
 
             # 4. Actionable Items
             actionable_items_response = requests.post(f"{API_URL}/api/actionable_items", json=email_data)
             if actionable_items_response.status_code == 200:
-                analysis_results["actionable_items"] = actionable_items_response.json()
+                if actionable_items_response.text.strip():  # Check if response is not empty
+                    analysis_results["actionable_items"] = actionable_items_response.json()
+                else:
+                    st.error("Actionable items extraction returned an empty response.")
             else:
                 st.error(f"Actionable items extraction failed. Status code: {actionable_items_response.status_code}")
 
             # 5. Root Cause
             root_cause_response = requests.post(f"{API_URL}/api/root_cause", json=email_data)
             if root_cause_response.status_code == 200:
-                analysis_results["root_cause"] = root_cause_response.json()
+                if root_cause_response.text.strip():  # Check if response is not empty
+                    analysis_results["root_cause"] = root_cause_response.json()
+                else:
+                    st.error("Root cause detection returned an empty response.")
             else:
                 st.error(f"Root cause detection failed. Status code: {root_cause_response.status_code}")
 
             # 6. Culprit Identification
             culprit_response = requests.post(f"{API_URL}/api/culprit", json=email_data)
             if culprit_response.status_code == 200:
-                analysis_results["culprit"] = culprit_response.json()
+                if culprit_response.text.strip():  # Check if response is not empty
+                    analysis_results["culprit"] = culprit_response.json()
+                else:
+                    st.error("Culprit identification returned an empty response.")
             else:
                 st.error(f"Culprit identification failed. Status code: {culprit_response.status_code}")
 
             # 7. Trend Analysis
             trend_analysis_response = requests.post(f"{API_URL}/api/trends", json=email_data)
             if trend_analysis_response.status_code == 200:
-                analysis_results["trends"] = trend_analysis_response.json()
+                if trend_analysis_response.text.strip():  # Check if response is not empty
+                    analysis_results["trends"] = trend_analysis_response.json()
+                else:
+                    st.error("Trend analysis returned an empty response.")
             else:
                 st.error(f"Trend analysis failed. Status code: {trend_analysis_response.status_code}")
 
             # 8. Risk Assessment
             risk_assessment_response = requests.post(f"{API_URL}/api/risk", json=email_data)
             if risk_assessment_response.status_code == 200:
-                analysis_results["risk"] = risk_assessment_response.json()
+                if risk_assessment_response.text.strip():  # Check if response is not empty
+                    analysis_results["risk"] = risk_assessment_response.json()
+                else:
+                    st.error("Risk assessment returned an empty response.")
             else:
                 st.error(f"Risk assessment failed. Status code: {risk_assessment_response.status_code}")
 
             # 9. Severity Detection
             severity_response = requests.post(f"{API_URL}/api/severity", json=email_data)
             if severity_response.status_code == 200:
-                analysis_results["severity"] = severity_response.json()
+                if severity_response.text.strip():  # Check if response is not empty
+                    analysis_results["severity"] = severity_response.json()
+                else:
+                    st.error("Severity detection returned an empty response.")
             else:
                 st.error(f"Severity detection failed. Status code: {severity_response.status_code}")
 
             # 10. Critical Keywords
             critical_keywords_response = requests.post(f"{API_URL}/api/critical_keywords", json=email_data)
             if critical_keywords_response.status_code == 200:
-                analysis_results["critical_keywords"] = critical_keywords_response.json()
+                if critical_keywords_response.text.strip():  # Check if response is not empty
+                    analysis_results["critical_keywords"] = critical_keywords_response.json()
+                else:
+                    st.error("Critical keyword identification returned an empty response.")
             else:
                 st.error(f"Critical keyword identification failed. Status code: {critical_keywords_response.status_code}")
 
