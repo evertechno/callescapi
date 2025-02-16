@@ -4,16 +4,21 @@ import requests
 # Define the API endpoint
 API_URL = "https://escalyticsv4api.onrender.com/analyze"
 
-# Function to send email content to the API
-def analyze_email_content(email_content, selected_scenario):
+# Function to send email content and scenario to the API
+def analyze_email_content(email_content, selected_scenario, attachment_file=None):
     # Prepare data for the request
     data = {
-        "email_content": email_content,
+        "content": email_content,
         "selected_scenario": selected_scenario
     }
 
+    # Prepare the files dictionary if an attachment is provided
+    files = {}
+    if attachment_file:
+        files = {'attachment': attachment_file}
+
     # Send the request to the API
-    response = requests.post(API_URL, json=data)
+    response = requests.post(API_URL, json=data, files=files)
 
     # Return the response data
     return response.json()
@@ -22,12 +27,13 @@ def analyze_email_content(email_content, selected_scenario):
 def main():
     st.title("Email Content Analyzer")
 
-    # Create a form to input the email content
+    # Create a form to input the email content and optionally upload an attachment
     with st.form(key='email_form'):
         email_content = st.text_area("Enter Email Content", height=200)
         selected_scenario = st.selectbox("Select Scenario", [
             "General Feedback", "Task Request", "Complaint", "Information Request"
         ])
+        attachment = st.file_uploader("Upload an attachment (optional)", type=["txt", "pdf", "docx"])
 
         submit_button = st.form_submit_button("Analyze")
 
@@ -38,7 +44,7 @@ def main():
         else:
             # Call the API to analyze the email content
             with st.spinner("Analyzing..."):
-                result = analyze_email_content(email_content, selected_scenario)
+                result = analyze_email_content(email_content, selected_scenario, attachment)
 
             # Display the results
             if "error" in result:
@@ -50,10 +56,10 @@ def main():
                 st.write("**Highlights:**", result.get("highlights", "Not Available"))
                 st.write("**Sentiment:**", result.get("sentiment", "Not Available"))
                 st.write("**Tone:**", result.get("tone", "Not Available"))
-                st.write("**Tasks:**", result.get("tasks", "Not Available"))
-                st.write("**Subject Recommendation:**", result.get("subject_recommendation", "Not Available"))
-                st.write("**Complexity Reduction:**", result.get("complexity_reduction", "Not Available"))
-                st.write("**Scenario Response:**", result.get("scenario_response", "Not Available"))
+                st.write("**Category:**", result.get("category", "Not Available"))
+                st.write("**Urgency:**", result.get("urgency", "Not Available"))
+                st.write("**Root Cause:**", result.get("root_cause", "Not Available"))
+                st.write("**Attachment Analysis:**", result.get("attachment_analysis", "Not Available"))
 
 # Run the Streamlit app
 if __name__ == "__main__":
