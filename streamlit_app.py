@@ -63,7 +63,6 @@ def main():
                 st.write("**Professionalism Score:**", result.get("professionalism_score", "Not Available"))
                 st.write("**Complexity Reduction:**", result.get("complexity_reduction", "Not Available"))
                 st.write("**Scenario Response:**", result.get("scenario_response", "Not Available"))
-                st.write("**Attachment Analysis:**", result.get("attachment_analysis", "Not Available"))
 
 # Run the Streamlit app
 if __name__ == "__main__":
