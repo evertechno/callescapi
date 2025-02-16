@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from io import BytesIO
 
 # Define the API endpoint
 API_URL = "https://escalyticsv4api.onrender.com/analyze_email"
@@ -61,8 +60,6 @@ def main():
                 st.write("**Tone:**", result.get("tone", "Not Available"))
                 st.write("**Tasks:**", result.get("tasks", "Not Available"))
                 st.write("**Subject Recommendation:**", result.get("subject_recommendation", "Not Available"))
-                st.write("**Grammar Issues:**", result.get("grammar_issues", "Not Available"))
-                st.write("**Clarity Score:**", result.get("clarity_score", "Not Available"))
                 st.write("**Professionalism Score:**", result.get("professionalism_score", "Not Available"))
                 st.write("**Complexity Reduction:**", result.get("complexity_reduction", "Not Available"))
                 st.write("**Scenario Response:**", result.get("scenario_response", "Not Available"))
