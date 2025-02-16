@@ -1,19 +1,16 @@
 import streamlit as st
 import requests
-import json
 
 # URL of your Flask API hosted on Render
 API_URL = "https://escalyticsv4api.onrender.com/analyze-email"
 
-def analyze_email(email_content, user_email, creds_json, uploaded_file):
+def analyze_email(email_content, uploaded_file):
     # Prepare data to send to the Flask API
     headers = {"Content-Type": "application/json"}
     files = {"attachment": uploaded_file} if uploaded_file else None
 
     data = {
-        "email_content": email_content,
-        "user_email": user_email,
-        "creds_json": creds_json
+        "email_content": email_content
     }
 
     try:
@@ -30,23 +27,17 @@ def analyze_email(email_content, user_email, creds_json, uploaded_file):
         return None
 
 # Streamlit interface
-st.title("Email Analysis and Draft Generator")
+st.title("Email Analysis")
 
 email_content = st.text_area("Enter the email content:")
-user_email = st.text_input("Your Email Address:")
-creds_json = st.text_area("Enter your OAuth credentials JSON:")
-
 uploaded_file = st.file_uploader("Upload an attachment (optional)", type=["txt", "pdf", "docx"])
 
 if st.button("Analyze Email"):
-    if email_content and user_email and creds_json:
-        result = analyze_email(email_content, user_email, creds_json, uploaded_file)
+    if email_content:
+        result = analyze_email(email_content, uploaded_file)
         if result:
             st.subheader("AI Response")
             st.write(result.get("ai_response"))
-
-            st.subheader("Gmail Draft Creation")
-            st.write(result.get("gmail_result"))
 
             st.subheader("Analysis Results")
             analysis = result.get("analysis", {})
@@ -55,5 +46,4 @@ if st.button("Analyze Email"):
         else:
             st.error("There was an error in the analysis.")
     else:
-        st.error("Please fill in all required fields.")
-
+        st.error("Please provide the email content.")
