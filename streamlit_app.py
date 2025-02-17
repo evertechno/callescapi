@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Define the API endpoint
-API_URL = "https://escalyticsv4api.onrender.com/analyze"
+API_URL = "https://escalyticsv4api.onrender.com/email_analyze"
 
 # Function to send email content and scenario to the API
 def analyze_email_content(email_content, selected_scenario, attachment_file=None):
