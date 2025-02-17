@@ -1,66 +1,63 @@
 import streamlit as st
 import requests
+from io import BytesIO
 
-# Define the API endpoint
-API_URL = "https://escalyticsv4api.onrender.com/email_analyze"
+# API endpoint
+API_URL = "https://escalyticsv4api.onrender.com/analyze_email"
 
-# Function to send email content and scenario to the API
-def analyze_email_content(email_content, selected_scenario, attachment_file=None):
-    # Prepare data for the request
-    data = {
-        "content": email_content,
-        "selected_scenario": selected_scenario
-    }
+# Streamlit UI
+st.title("Email Content Analyzer")
 
-    # Prepare the files dictionary if an attachment is provided
-    files = {}
-    if attachment_file:
-        files = {'attachment': attachment_file}
+# Text input for the email content
+email_content = st.text_area("Enter Email Content", height=250)
 
-    # Send the request to the API
-    response = requests.post(API_URL, json=data, files=files)
+# Dropdown for selecting a scenario
+scenarios = ["General Feedback", "Request for Information", "Complaint", "Response to Complaint"]
+selected_scenario = st.selectbox("Select Scenario", scenarios)
 
-    # Return the response data
-    return response.json()
+# File uploader for attachments
+uploaded_file = st.file_uploader("Upload Attachment (PDF, DOCX, TXT)", type=["pdf", "docx", "txt"])
 
-# Streamlit app
-def main():
-    st.title("Email Content Analyzer")
+# Submit button to send data to the API
+if st.button("Analyze Email"):
+    if email_content:
+        # Prepare data for the API
+        files = {"attachment": uploaded_file.getvalue()} if uploaded_file else None
+        data = {
+            "email_content": email_content,
+            "selected_scenario": selected_scenario
+        }
 
-    # Create a form to input the email content and optionally upload an attachment
-    with st.form(key='email_form'):
-        email_content = st.text_area("Enter Email Content", height=200)
-        selected_scenario = st.selectbox("Select Scenario", [
-            "General Feedback", "Task Request", "Complaint", "Information Request"
-        ])
-        attachment = st.file_uploader("Upload an attachment (optional)", type=["txt", "pdf", "docx"])
+        # Make API request
+        response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None)
 
-        submit_button = st.form_submit_button("Analyze")
+        if response.status_code == 200:
+            result = response.json()
 
-    # When the form is submitted, analyze the email content
-    if submit_button:
-        if not email_content:
-            st.error("Please provide the email content.")
+            # Display results
+            st.subheader("Analysis Results")
+            st.write("### Summary")
+            st.write(result.get("summary"))
+            st.write("### Response")
+            st.write(result.get("response"))
+            st.write("### Highlights")
+            st.write(result.get("highlights"))
+            st.write("### Sentiment")
+            st.write(f"Polarity: {result.get('sentiment')}")
+            st.write("### Tone")
+            st.write(result.get("tone"))
+            st.write("### Tasks")
+            st.write(result.get("tasks"))
+            st.write("### Grammar Issues")
+            st.write(result.get("grammar_issues"))
+            st.write("### Professionalism Score")
+            st.write(result.get("professionalism_score"))
+            st.write("### Complexity Reduction")
+            st.write(result.get("complexity_reduction"))
+            st.write("### Attachment Analysis")
+            st.write(result.get("attachment_analysis"))
+
         else:
-            # Call the API to analyze the email content
-            with st.spinner("Analyzing..."):
-                result = analyze_email_content(email_content, selected_scenario, attachment)
-
-            # Display the results
-            if "error" in result:
-                st.error(f"Error: {result['error']}")
-            else:
-                st.subheader("Analysis Results")
-                st.write("**Summary:**", result.get("summary", "Not Available"))
-                st.write("**Response:**", result.get("response", "Not Available"))
-                st.write("**Highlights:**", result.get("highlights", "Not Available"))
-                st.write("**Sentiment:**", result.get("sentiment", "Not Available"))
-                st.write("**Tone:**", result.get("tone", "Not Available"))
-                st.write("**Category:**", result.get("category", "Not Available"))
-                st.write("**Urgency:**", result.get("urgency", "Not Available"))
-                st.write("**Root Cause:**", result.get("root_cause", "Not Available"))
-                st.write("**Attachment Analysis:**", result.get("attachment_analysis", "Not Available"))
-
-# Run the Streamlit app
-if __name__ == "__main__":
-    main()
+            st.error("Error in API call: " + response.json().get("error", "Unknown error"))
+    else:
+        st.error("Please enter the email content.")
