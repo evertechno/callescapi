@@ -35,15 +35,9 @@ if st.button("Analyze Email"):
 
         try:
             # Make API request
-            if uploaded_file:
-                files = {"attachment": uploaded_file.getvalue()}
-                response = requests.post(API_URL, json=data, files=files, headers=headers)
-            else:
-                response = requests.post(API_URL, json=data, headers=headers)
-                
-            # Check if the API returned an error
+            response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None, headers=headers)
             response.raise_for_status()  # Raise an exception for HTTP errors
-            
+
             # Attempt to parse the JSON response
             result = response.json()
 
@@ -70,13 +64,8 @@ if st.button("Analyze Email"):
             st.write("### Attachment Analysis")
             st.write(result.get("attachment_analysis"))
 
-        except requests.exceptions.HTTPError as http_err:
-            if response.status_code == 401:
-                st.error("Unauthorized: Invalid API Key. Please check your API key.")
-            else:
-                st.error(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.RequestException as req_err:
-            st.error(f"Request error occurred: {req_err}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request error: {e}")
         except ValueError:
             st.error("Error parsing JSON response. Please check the API response format.")
     else:
