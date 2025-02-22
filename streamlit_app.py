@@ -4,6 +4,7 @@ from io import BytesIO
 
 # API endpoint
 API_URL = "https://escalyticsv4api.onrender.com/analyze_email"
+API_KEY = "your_secure_api_key"  # Replace this with your actual API key
 
 # Streamlit UI
 st.title("Email Content Analyzer")
@@ -28,8 +29,12 @@ if st.button("Analyze Email"):
             "selected_scenario": selected_scenario
         }
 
+        headers = {
+            "x-api-key": API_KEY
+        }
+
         # Make API request
-        response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None)
+        response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None, headers=headers)
 
         if response.status_code == 200:
             result = response.json()
