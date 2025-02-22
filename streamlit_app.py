@@ -33,10 +33,12 @@ if st.button("Analyze Email"):
             "x-api-key": API_KEY
         }
 
-        # Make API request
-        response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None, headers=headers)
+        try:
+            # Make API request
+            response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None, headers=headers)
+            response.raise_for_status()  # Raise an exception for HTTP errors
 
-        if response.status_code == 200:
+            # Attempt to parse the JSON response
             result = response.json()
 
             # Display results
@@ -62,7 +64,9 @@ if st.button("Analyze Email"):
             st.write("### Attachment Analysis")
             st.write(result.get("attachment_analysis"))
 
-        else:
-            st.error("Error in API call: " + response.json().get("error", "Unknown error"))
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request error: {e}")
+        except ValueError:
+            st.error("Error parsing JSON response. Please check the API response format.")
     else:
         st.error("Please enter the email content.")
