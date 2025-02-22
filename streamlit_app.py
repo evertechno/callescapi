@@ -29,13 +29,12 @@ if st.button("Analyze Email"):
             "selected_scenario": selected_scenario
         }
 
-        headers = {
-            "x-api-key": API_KEY
-        }
+        # Append API key as query parameter
+        api_url_with_key = f"{API_URL}?api_key={API_KEY}"
 
         try:
             # Make API request
-            response = requests.post(API_URL, json=data, files={"attachment": uploaded_file} if uploaded_file else None, headers=headers)
+            response = requests.post(api_url_with_key, json=data, files={"attachment": uploaded_file} if uploaded_file else None)
             response.raise_for_status()  # Raise an exception for HTTP errors
 
             # Attempt to parse the JSON response
