@@ -1,17 +1,21 @@
 # app.py
 import os
 import time
-import uuid
 import json
-import requests
 import tempfile
+import re
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
 from supabase import create_client
 from google import genai
 from google.genai import types
+import requests
+
+# ---------------------------
+# Fix inotify file watcher issue (cloud safe)
+# ---------------------------
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
 
 # ---------------------------
 # Config & secrets
@@ -44,15 +48,10 @@ def get_current_user():
 
 def upload_to_supabase_storage(user_id: str, filename: str, file_bytes: bytes):
     path = f"{user_id}/{filename}"
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(file_bytes)
-        tmp.flush()
-        tmp_path = tmp.name
-    storage = supabase.storage()
     try:
-        storage.from_(BUCKET_NAME).upload(path, tmp_path, {"cacheControl": "3600"})
+        supabase.storage.from_(BUCKET_NAME).upload(path, file_bytes)
     except Exception:
-        storage.from_(BUCKET_NAME).update(path, tmp_path)
+        supabase.storage.from_(BUCKET_NAME).update(path, file_bytes)
     return path
 
 def insert_voice_recording_row(user_id, filename, path, size, file_type):
@@ -126,10 +125,17 @@ Transcription:
     for chunk in client.models.generate_content_stream(model=model, contents=contents, config=config):
         if hasattr(chunk, "text") and chunk.text:
             result_text += chunk.text
+
+    # Extract JSON safely
     try:
-        ai_json = json.loads(result_text)
+        match = re.search(r"\{.*\}", result_text, re.S)
+        if match:
+            ai_json = json.loads(match.group(0))
+        else:
+            ai_json = {"raw_text": result_text}
     except Exception:
         ai_json = {"raw_text": result_text}
+
     analysis_row = {
         "user_id": user_id,
         "recording_id": recording_id,
@@ -145,6 +151,19 @@ Transcription:
     }
     supabase.table("voice_compliance_analysis").insert(analysis_row).execute()
     return ai_json
+
+def extract_transcription_text(cf_body):
+    """Try multiple keys where Deepgram may store transcription text"""
+    if not isinstance(cf_body, dict):
+        return str(cf_body)
+    return (
+        cf_body.get("transcript")
+        or cf_body.get("text")
+        or cf_body.get("results", {})
+            .get("channels", [{}])[0]
+            .get("alternatives", [{}])[0]
+            .get("transcript", "")
+    )
 
 # ---------------------------
 # UI
@@ -186,6 +205,7 @@ with upload_tab:
     else:
         user_id = user["id"]
         st.success(f"Signed in as {user['email']}")
+
         uploaded_file = st.file_uploader("Upload audio", type=["mp3", "wav", "m4a"])
         if uploaded_file and st.button("Upload & Process"):
             filename = uploaded_file.name
@@ -196,44 +216,44 @@ with upload_tab:
             progress_text = st.empty()
             progress_bar = st.progress(0)
 
-            def worker():
-                try:
-                    progress_text.text("Uploading...")
-                    path = upload_to_supabase_storage(user_id, filename, file_bytes)
-                    inserted = insert_voice_recording_row(user_id, filename, path, file_size, file_type)
-                    recording_id = inserted.data[0]["id"]
-                    progress_bar.progress(20)
+            try:
+                # Upload to Supabase
+                progress_text.text("Uploading...")
+                path = upload_to_supabase_storage(user_id, filename, file_bytes)
+                inserted = insert_voice_recording_row(user_id, filename, path, file_size, file_type)
+                recording_id = inserted.data[0]["id"]
+                progress_bar.progress(20)
 
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
-                        tmp.write(file_bytes)
-                        tmp.flush()
-                        local_path = tmp.name
+                # Save locally for Cloudflare
+                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
+                    tmp.write(file_bytes)
+                    tmp.flush()
+                    local_path = tmp.name
 
-                    progress_text.text("Transcribing...")
-                    start = time.time()
-                    cf_resp = call_cloudflare_transcribe(local_path)
-                    elapsed = int((time.time() - start) * 1000)
-                    cf_body = cf_resp["body"]
+                # Transcribe
+                progress_text.text("Transcribing...")
+                start = time.time()
+                cf_resp = call_cloudflare_transcribe(local_path)
+                elapsed = int((time.time() - start) * 1000)
+                cf_body = cf_resp["body"]
 
-                    transcription_text = ""
-                    if isinstance(cf_body, dict):
-                        transcription_text = cf_body.get("transcript") or cf_body.get("text") or ""
-                    else:
-                        transcription_text = str(cf_body)
+                transcription_text = extract_transcription_text(cf_body)
 
-                    t_ins = insert_transcription(user_id, recording_id, transcription_text, cf_body, elapsed)
-                    transcription_id = t_ins.data[0]["id"]
-                    progress_bar.progress(60)
+                t_ins = insert_transcription(user_id, recording_id, transcription_text, cf_body, elapsed)
+                transcription_id = t_ins.data[0]["id"]
+                progress_bar.progress(60)
 
-                    progress_text.text("Analyzing...")
-                    ai_json = analyze_with_gemini(user_id, recording_id, transcription_id, transcription_text)
-                    progress_bar.progress(100)
+                # Analyze
+                progress_text.text("Analyzing...")
+                ai_json = analyze_with_gemini(user_id, recording_id, transcription_id, transcription_text)
+                progress_bar.progress(100)
 
-                    st.success("Complete!")
-                    st.code(transcription_text[:4000])
-                    st.json(ai_json)
-                except Exception as e:
-                    st.exception(e)
-                    progress_text.text("Error.")
+                st.success("Complete!")
+                st.subheader("Transcription")
+                st.code(transcription_text[:4000])
+                st.subheader("AI Compliance Analysis")
+                st.json(ai_json)
 
-            ThreadPoolExecutor(max_workers=1).submit(worker)
+            except Exception as e:
+                st.exception(e)
+                progress_text.text("Error.")
