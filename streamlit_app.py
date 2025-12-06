@@ -259,8 +259,4 @@ Welcome to **K2 Hydro DB**, a unified API system providing:
 ### ✅ Custom SQL Execution  
 ### ✅ Automated Valuation & Research Reports  
 
----
-
-# 🔑 1. Authentication
-All API calls require your API key:
 
