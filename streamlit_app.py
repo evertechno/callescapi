@@ -3,17 +3,17 @@ import requests
 import json
 import pandas as pd
 
-# -------------------------
-# Load secrets
-# -------------------------
-API_BASE_URL = st.secrets["API_BASE_URL"]  # e.g. https://xxx.supabase.co/functions/v1/api-gateway
+# ============================================================
+# LOAD SECRETS
+# ============================================================
+API_BASE_URL = st.secrets["API_BASE_URL"]
 API_KEY = st.secrets["API_KEY"]
 
 HEADERS = {"x-api-key": API_KEY}
 
-# -------------------------
-# Endpoints definition (converted from your React file)
-# -------------------------
+# ============================================================
+# ENDPOINT DEFINITIONS
+# ============================================================
 ENDPOINTS = [
     {
         "category": "Company Data",
@@ -145,7 +145,7 @@ ENDPOINTS = [
             {
                 "method": "POST",
                 "path": "/sql",
-                "description": "Execute custom SQL",
+                "description": "Execute custom SQL query",
                 "params": [
                     {"name": "sql", "type": "string", "required": True},
                 ],
@@ -154,21 +154,18 @@ ENDPOINTS = [
     },
 ]
 
-
-# -------------------------
-# Utility to perform API call
-# -------------------------
+# ============================================================
+# API CALLER
+# ============================================================
 def call_api(method, path, params):
     url = f"{API_BASE_URL}{path}"
 
     if method == "GET":
         response = requests.get(url, headers=HEADERS, params=params)
-
     elif method == "POST":
         response = requests.post(url, headers={**HEADERS, "Content-Type": "application/json"}, json=params)
-
     else:
-        return {"error": f"Unsupported method: {method}"}
+        return {"error": f"Unsupported method {method}"}
 
     try:
         return response.json()
@@ -176,69 +173,94 @@ def call_api(method, path, params):
         return {"error": "Failed to parse JSON", "raw": response.text}
 
 
-# -------------------------
-# Streamlit UI
-# -------------------------
-st.title("🚀 K2 Hydro DB — API Explorer (Streamlit)")
-st.caption("Fully dynamic client for Supabase Edge Function API Gateway")
+# ============================================================
+# STREAMLIT UI
+# ============================================================
+st.title("🚀 K2 Hydro DB — API Explorer")
+st.caption("A full-featured Streamlit client for your Supabase API Gateway")
 
-category = st.selectbox(
-    "Select API Category",
-    [c["category"] for c in ENDPOINTS]
-)
+tabs = st.tabs(["🔍 API Explorer", "📘 Documentation / User Guide"])
 
-selected_cat = next(c for c in ENDPOINTS if c["category"] == category)
+# ============================================================
+# TAB 1 — API EXPLORER
+# ============================================================
+with tabs[0]:
 
-endpoint_name = st.selectbox(
-    "Select Endpoint",
-    [e["description"] for e in selected_cat["endpoints"]]
-)
+    category = st.selectbox(
+        "Select API Category",
+        [c["category"] for c in ENDPOINTS]
+    )
 
-endpoint = next(e for e in selected_cat["endpoints"] if e["description"] == endpoint_name)
+    selected_cat = next(c for c in ENDPOINTS if c["category"] == category)
 
-st.subheader(endpoint["description"])
-st.code(f"{endpoint['method']} {endpoint['path']}")
+    endpoint_name = st.selectbox(
+        "Select Endpoint",
+        [e["description"] for e in selected_cat["endpoints"]]
+    )
 
-# -------------------------
-# Build dynamic form
-# -------------------------
-st.write("### Parameters")
-param_values = {}
+    endpoint = next(e for e in selected_cat["endpoints"] if e["description"] == endpoint_name)
 
-for p in endpoint["params"]:
-    label = f"{p['name']} ({p['type']})"
-    if p["type"] == "number":
-        value = st.number_input(label, value=None, step=1, format="%d")
-    else:
-        value = st.text_input(label)
+    st.subheader(endpoint["description"])
+    st.code(f"{endpoint['method']} {endpoint['path']}")
 
-    if value not in ("", None):
-        param_values[p["name"]] = value
-    elif p["required"]:
-        st.warning(f"⚠️ Required: {p['name']}")
+    # Parameter form
+    st.write("### Parameters")
+    param_values = {}
 
-if st.button("Send Request"):
-    with st.spinner("Calling API..."):
-        result = call_api(endpoint["method"], endpoint["path"], param_values)
+    for p in endpoint["params"]:
+        label = f"{p['name']} ({p['type']})"
+        if p["type"] == "number":
+            value = st.number_input(label, value=None, step=1, format="%d")
+        else:
+            value = st.text_input(label)
 
-    st.write("### Response")
-    st.json(result)
+        if value not in ("", None):
+            param_values[p["name"]] = value
+        elif p["required"]:
+            st.warning(f"⚠️ Required: {p['name']}")
 
-    # Optional: show dataframe if data is list
-    if isinstance(result, dict) and result.get("success") and isinstance(result.get("data"), list):
-        try:
-            df = pd.DataFrame(result["data"])
-            st.write("### Table View")
-            st.dataframe(df)
+    if st.button("Send Request"):
+        with st.spinner("Calling API..."):
+            result = call_api(endpoint["method"], endpoint["path"], param_values)
 
-            # Download CSV
-            csv = df.to_csv(index=False)
-            st.download_button(
-                "Download as CSV",
-                csv,
-                "data.csv",
-                "text/csv"
-            )
-        except Exception:
-            pass
+        st.write("### Response")
+        st.json(result)
+
+        # DataFrame view for list data
+        if isinstance(result, dict) and result.get("success") and isinstance(result.get("data"), list):
+            try:
+                df = pd.DataFrame(result["data"])
+                st.write("### Table View")
+                st.dataframe(df)
+
+                csv = df.to_csv(index=False)
+                st.download_button("Download CSV", csv, "data.csv", "text/csv")
+            except Exception:
+                pass
+
+
+# ============================================================
+# TAB 2 — DOCUMENTATION / USER GUIDE
+# ============================================================
+with tabs[1]:
+
+    st.header("📘 K2 Hydro DB — Complete User Guide")
+    
+    st.markdown("""
+Welcome to **K2 Hydro DB**, a unified API system providing:
+
+### ✅ NSE & NASDAQ Company Metadata  
+### ✅ Financial Statements (Income, Balance Sheet, Cashflow)  
+### ✅ Historical OHLC Prices  
+### ✅ 100+ Financial Ratios  
+### ✅ Compliance & Penalty History (SniffR)  
+### ✅ Portfolio APIs  
+### ✅ AI-powered NL → SQL Query Engine  
+### ✅ Custom SQL Execution  
+### ✅ Automated Valuation & Research Reports  
+
+---
+
+# 🔑 1. Authentication
+All API calls require your API key:
 
