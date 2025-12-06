@@ -258,5 +258,5 @@ Welcome to **K2 Hydro DB**, a unified API system providing:
 ### ✅ AI-powered NL → SQL Query Engine  
 ### ✅ Custom SQL Execution  
 ### ✅ Automated Valuation & Research Reports  
-
+""")
 
